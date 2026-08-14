@@ -190,7 +190,7 @@ def carve_model(model, reaction_scores, inplace=True, default_score=-1.0, uptake
                 soft_constraints=None, hard_constraints=None, ref_model=None, ref_score=0.0, init_env=None,
                 debug_output=None, verbose=False, backend='reframed', gprs=None, solver=None,
                 threads=None, time_limit=None, min_growth=0.1, approach=None, max_cost=None,
-                thermodynamic='loopless', bigm=None):
+                thermodynamic='loopless', bigm=None, reward_scale=1.0):
     """ Reconstruct a metabolic model using the CarveMe approach.
 
     Args:
@@ -245,7 +245,8 @@ def carve_model(model, reaction_scores, inplace=True, default_score=-1.0, uptake
         inactive = complete_model(model, reaction_scores, gprs=gprs, min_growth=min_growth,
                                   constraints=hard_constraints, solver=solver, threads=threads,
                                   time_limit=time_limit, verbose=verbose, approach=approach,
-                                  max_cost=max_cost, thermodynamic=thermodynamic, bigm=bigm)
+                                  max_cost=max_cost, thermodynamic=thermodynamic, bigm=bigm,
+                                  reward_scale=reward_scale)
         sol = None
     else:
         sol = minmax_reduction(model, scores, default_score=default_score, uptake_score=uptake_score, soft_score=soft_score,

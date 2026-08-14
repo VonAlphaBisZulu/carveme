@@ -196,7 +196,7 @@ def complete_model(model, reaction_scores, gprs=None, min_growth=0.1, min_atpm=M
                    constraints=None, extra_conditions=None, solver=None, threads=None,
                    time_limit=None, thermodynamic='loopless', verbose=False, compress=None,
                    skip_fvas=None, approach=None, seed=None, exchanges='prune',
-                   max_cost=None, bigm=1000.0):
+                   max_cost=None, bigm=1000.0, reward_scale=1.0):
     """Which reactions to leave out of the universe, chosen by completion instead of carving.
 
     Carving picks a threshold on annotation score and deletes below it, then repairs whatever
@@ -233,6 +233,9 @@ def complete_model(model, reaction_scores, gprs=None, min_growth=0.1, min_atpm=M
             first feasible one, which is far quicker and shows how much the search's arbitrary
             choices matter.
         seed (int): MILP seed, to sample alternative reconstructions of equal standing.
+        reward_scale (float): multiplies the reward on annotated reactions, whose natural scale is
+            at most 1 against a cost of 1 per unannotated reaction. Raise it to keep more of the
+            annotation at the price of a larger network.
         bigm (float): the constant M for gating rows whose bound is infinite. Defaults to 1e3,
             the same value carving uses. Passing None leaves those rows as indicator constraints,
             which is StrainDesign's default and is far slower here: an indicator contributes
@@ -310,7 +313,11 @@ def complete_model(model, reaction_scores, gprs=None, min_growth=0.1, min_atpm=M
         if r in sinks:
             return SINK_COST
         if r in annotated:
-            return -max(score_of.get(r, 1.0), MIN_SCORE)
+            # An annotated reaction is worth at most -1 while every unannotated reaction needed to
+            # make it carry flux costs +1, so evidence that is not already supported by the rest
+            # of the network is systematically dropped. reward_scale is the exchange rate between
+            # the two: above 1 the search will buy support in order to keep evidence.
+            return -reward_scale * max(score_of.get(r, 1.0), MIN_SCORE)
         if r in exchange:
             return EXCHANGE_COST
         if r in spontaneous:
